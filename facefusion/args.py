@@ -83,6 +83,7 @@ def apply_args(args : Args, apply_state_item : ApplyStateItem) -> None:
 	apply_state_item('temp_frame_format', args.get('temp_frame_format'))
 	apply_state_item('keep_temp', args.get('keep_temp'))
 	# output creation
+	apply_state_item('output_face_swaps_only', args.get('output_face_swaps_only'))
 	apply_state_item('output_image_quality', args.get('output_image_quality'))
 	if is_image(args.get('target_path')):
 		output_image_resolution = detect_image_resolution(args.get('target_path'))

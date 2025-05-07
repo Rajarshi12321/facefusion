@@ -553,28 +553,46 @@ def normalize_crop_frame(crop_vision_frame : VisionFrame) -> VisionFrame:
 def get_reference_frame(source_face : Face, target_face : Face, temp_vision_frame : VisionFrame) -> VisionFrame:
 	return swap_face(source_face, target_face, temp_vision_frame)
 
+import cv2
+
 
 def process_frame(inputs : FaceSwapperInputs) -> VisionFrame:
 	reference_faces = inputs.get('reference_faces')
 	source_face = inputs.get('source_face')
 	target_vision_frame = inputs.get('target_vision_frame')
 	many_faces = sort_and_filter_faces(get_many_faces([ target_vision_frame ]))
+	target_vision_frame_output = target_vision_frame.copy()
 
 	if state_manager.get_item('face_selector_mode') == 'many':
 		if many_faces:
 			for target_face in many_faces:
-				target_vision_frame = swap_face(source_face, target_face, target_vision_frame)
+				target_vision_frame_output = swap_face(source_face, target_face, target_vision_frame)
 	if state_manager.get_item('face_selector_mode') == 'one':
 		target_face = get_one_face(many_faces)
 		if target_face:
-			target_vision_frame = swap_face(source_face, target_face, target_vision_frame)
+			target_vision_frame_output = swap_face(source_face, target_face, target_vision_frame)
 	if state_manager.get_item('face_selector_mode') == 'reference':
 		similar_faces = find_similar_faces(many_faces, reference_faces, state_manager.get_item('reference_face_distance'))
 		if similar_faces:
 			for similar_face in similar_faces:
-				target_vision_frame = swap_face(source_face, similar_face, target_vision_frame)
-	return target_vision_frame
 
+				target_vision_frame_output = swap_face(source_face, similar_face, target_vision_frame)
+	
+	if target_vision_frame_output.all() != target_vision_frame.all():
+		logger.info(f"##= Output frame is the same as input frame. Skipping this frame.",__name__)
+		# return target_vision_frame
+	
+	return target_vision_frame_output
+
+from PIL import Image
+import numpy as np
+import cv2
+
+def show_image_without_cv2(name: str, frame: np.ndarray) -> None:
+    # Convert BGR (OpenCV format) to RGB
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(rgb_frame)
+    img.show(title=name)  # This opens the image in the default viewer
 
 def process_frames(source_paths : List[str], queue_payloads : List[QueuePayload], update_progress : UpdateProgress) -> None:
 	reference_faces = get_reference_faces() if 'reference' in state_manager.get_item('face_selector_mode') else None
@@ -591,14 +609,43 @@ def process_frames(source_paths : List[str], queue_payloads : List[QueuePayload]
 	for queue_payload in process_manager.manage(queue_payloads):
 		target_vision_path = queue_payload['frame_path']
 		target_vision_frame = read_image(target_vision_path)
+		processed_frames = []  # List to track successfully processed frames
+
+        # Skip processing if no faces are detected in the target frame
+      
+		target_faces = get_many_faces([ target_vision_frame ])
+	
+		
 		output_vision_frame = process_frame(
 		{
 			'reference_faces': reference_faces,
 			'source_face': source_face,
 			'target_vision_frame': target_vision_frame
 		})
-		write_image(target_vision_path, output_vision_frame)
-		update_progress(1)
+  
+		
+		# Check if the output frame is different from the input frame
+		# logger.info(f"state_manager.get_item('output_face_swaps_only'): {str(state_manager.get_item('output_face_swaps_only'))}", __name__)
+
+		if state_manager.get_item('output_face_swaps_only'):
+			# logger.info(f"'))}", __name__)
+			# Check if the output frame is different from the input frame
+			if not np.array_equal(output_vision_frame, target_vision_frame):
+				write_image(target_vision_path, output_vision_frame)
+				processed_frames.append(target_vision_path)  # Track the processed frame
+				update_progress(1)
+			else:
+				logger.info(f"Output frame is the same as input frame {target_vision_path}. Skipping this frame.", __name__)
+				blank_frame = np.zeros_like(target_vision_frame)  # Create a blank frame or handle as needed
+				write_image(target_vision_path, blank_frame)  # Write a blank frame or handle as needed
+				processed_frames.append(target_vision_path)  # Track the processed frame
+				update_progress(1)
+		else:
+			write_image(target_vision_path, output_vision_frame)
+			processed_frames.append(target_vision_path)
+			update_progress(1)
+
+	return processed_frames  # Return the list of processed frames
 
 
 def process_image(source_paths : List[str], target_path : str, output_path : str) -> None:

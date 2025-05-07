@@ -12,15 +12,22 @@ def perform_face_swap(source_image_path, target_video_path, output_video_path):
     commands = [
         sys.executable, 
         'facefusion.py', 
-        'run', 
+        'headless-run', 
         '--jobs-path', get_test_jobs_directory(), 
         '--processors', 'face_swapper', 
         '-s', source_image_path, 
         '-t', target_video_path, 
         '-o', output_video_path, 
-        '--trim-frame-end', '1'
+        '--trim-frame-start', '95',
+        # '--trim-frame-end', '96',
+        '--trim-frame-end', '105',
+        '--output_face_swaps_only'
+        # '--trim-frame-end', '100',
     ]
+    print(subprocess.run(commands).returncode)
+    # logging.info(f"Command executed with return code: {result.returncode}")
+ 
     assert subprocess.run(commands).returncode == 0
 
 # Example usage
-perform_face_swap('test_files/input_img.jpeg', 'test_files/input_video.mp4.mp4', 'test_files/outputs/output.mp4')
+perform_face_swap('test_files/input2.jpg', 'test_files/input_video3.mp4', 'test_files/outputs/output.mp4')

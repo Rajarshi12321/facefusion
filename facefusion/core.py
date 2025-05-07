@@ -33,10 +33,12 @@ def cli() -> None:
 	if pre_check():
 		signal.signal(signal.SIGINT, lambda signal_number, frame: graceful_exit(0))
 		program = create_program()
+  
 
 		if validate_args(program):
 			args = vars(program.parse_args())
 			apply_args(args, state_manager.init_item)
+   
 
 			if state_manager.get_item('command'):
 				logger.init(state_manager.get_item('log_level'))

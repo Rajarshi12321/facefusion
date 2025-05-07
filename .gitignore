@@ -4,6 +4,7 @@ __pycache__
 .jobs
 .idea
 .vscode
+tests/jobs/
 # test_face_swap.py 
 # test_files/
 *.toml

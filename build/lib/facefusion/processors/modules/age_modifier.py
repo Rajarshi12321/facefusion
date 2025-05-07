@@ -220,6 +220,7 @@ def process_frame(inputs : AgeModifierInputs) -> VisionFrame:
 		if similar_faces:
 			for similar_face in similar_faces:
 				target_vision_frame = modify_age(similar_face, target_vision_frame)
+    
 	return target_vision_frame
 
 
