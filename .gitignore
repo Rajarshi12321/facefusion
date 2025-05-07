@@ -5,7 +5,7 @@ __pycache__
 .idea
 .vscode
 # test_face_swap.py 
-test_files/
+# test_files/
 *.toml
 # activate.bat
 *.egg-info
