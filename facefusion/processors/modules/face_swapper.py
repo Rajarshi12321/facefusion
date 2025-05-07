@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 from functools import lru_cache
 from typing import List, Tuple
 
+import os
 import numpy
 
 import facefusion.choices
@@ -636,9 +637,11 @@ def process_frames(source_paths : List[str], queue_payloads : List[QueuePayload]
 				update_progress(1)
 			else:
 				logger.info(f"Output frame is the same as input frame {target_vision_path}. Skipping this frame.", __name__)
-				blank_frame = np.zeros_like(target_vision_frame)  # Create a blank frame or handle as needed
-				write_image(target_vision_path, blank_frame)  # Write a blank frame or handle as needed
+				# blank_frame = np.zeros_like(target_vision_frame)  # Create a blank frame or handle as needed
+				# write_image(target_vision_path, blank_frame)  # Write a blank frame or handle as needed
+				# write_image(target_vision_path, None)  # Write a blank frame or handle as needed
 				processed_frames.append(target_vision_path)  # Track the processed frame
+				os.remove(target_vision_path)			
 				update_progress(1)
 		else:
 			write_image(target_vision_path, output_vision_frame)
